@@ -1,0 +1,1124 @@
+definitions:
+  github_com_d60-lab_im-system_internal_model.InitMultipartUploadRequest:
+    properties:
+      chunk_size:
+        description: 分片大小，默认5MB
+        type: integer
+      content_type:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        minimum: 1
+        type: integer
+    required:
+    - file_name
+    - file_size
+    type: object
+  github_com_d60-lab_im-system_internal_model.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  github_com_d60-lab_im-system_internal_model.RegisterRequest:
+    properties:
+      nickname:
+        maxLength: 32
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+      username:
+        maxLength: 32
+        minLength: 3
+        type: string
+    required:
+    - password
+    - username
+    type: object
+info:
+  contact: {}
+paths:
+  /file/{file_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除指定文件
+      parameters:
+      - description: 文件ID
+        in: path
+        name: file_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 文件不存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 删除失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 删除文件
+      tags:
+      - 文件
+  /file/download/{file_id}:
+    get:
+      consumes:
+      - application/json
+      description: 下载指定文件
+      parameters:
+      - description: 文件ID
+        in: path
+        name: file_id
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: 文件内容
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 文件不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 下载文件
+      tags:
+      - 文件
+  /file/info/{file_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据文件ID获取文件详细信息
+      parameters:
+      - description: 文件ID
+        in: path
+        name: file_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件信息
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 文件不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取文件信息
+      tags:
+      - 文件
+  /file/multipart/abort:
+    post:
+      consumes:
+      - application/json
+      description: 取消分片上传，清理已上传分片
+      parameters:
+      - description: 上传ID
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            upload_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 取消失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 取消分片上传
+      tags:
+      - 文件
+  /file/multipart/complete:
+    post:
+      consumes:
+      - application/json
+      description: 完成分片上传，合并文件
+      parameters:
+      - description: 分片信息
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            parts:
+              items:
+                type: object
+              type: array
+            upload_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 完成成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 完成失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 完成分片上传
+      tags:
+      - 文件
+  /file/multipart/init:
+    post:
+      consumes:
+      - application/json
+      description: 初始化大文件分片上传
+      parameters:
+      - description: 上传信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_d60-lab_im-system_internal_model.InitMultipartUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 初始化成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 初始化失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 初始化分片上传
+      tags:
+      - 文件
+  /file/multipart/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传文件分片
+      parameters:
+      - description: 上传ID
+        in: formData
+        name: upload_id
+        required: true
+        type: string
+      - description: 分片序号
+        in: formData
+        name: part_number
+        required: true
+        type: integer
+      - description: 分片文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 上传失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 上传分片
+      tags:
+      - 文件
+  /file/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传图片、文档等文件
+      parameters:
+      - description: 文件
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 上传失败
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 上传文件
+      tags:
+      - 文件
+  /file/url/{file_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取文件的临时访问URL
+      parameters:
+      - description: 文件ID
+        in: path
+        name: file_id
+        required: true
+        type: string
+      - default: 3600
+        description: 过期时间(秒)
+        in: query
+        name: expiry
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 文件URL
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 文件不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取文件访问URL
+      tags:
+      - 文件
+  /groups:
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新的群组
+      parameters:
+      - description: 群组信息
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            avatar:
+              type: string
+            description:
+              type: string
+            member_ids:
+              items:
+                type: string
+              type: array
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 创建成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 创建群组
+      tags:
+      - 群组
+  /groups/{group_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 解散指定群组，仅群主可操作
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 解散成功
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 无权限
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 群组不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 解散群组
+      tags:
+      - 群组
+    get:
+      consumes:
+      - application/json
+      description: 根据群组ID获取群组详细信息
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 群组信息
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 群组不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取群组信息
+      tags:
+      - 群组
+    put:
+      consumes:
+      - application/json
+      description: 更新群组的名称、头像、公告等信息
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 无权限
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 更新群组信息
+      tags:
+      - 群组
+  /groups/{group_id}/join:
+    post:
+      consumes:
+      - application/json
+      description: 申请加入指定群组
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 加入成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 已在群中
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 群组不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 加入群组
+      tags:
+      - 群组
+  /groups/{group_id}/leave:
+    post:
+      consumes:
+      - application/json
+      description: 退出指定群组
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 退出成功
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 群主不能退出
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 群组不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 退出群组
+      tags:
+      - 群组
+  /groups/{group_id}/members:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定群组的成员列表
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成员列表
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 群组不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取群成员列表
+      tags:
+      - 群组
+  /groups/{group_id}/members/{user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 将指定成员踢出群组
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: 被踢用户ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 踢出成功
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: 无权限
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 用户不在群中
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 踢出群成员
+      tags:
+      - 群组
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 使用用户名密码登录，返回JWT令牌
+      parameters:
+      - description: 登录信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_d60-lab_im-system_internal_model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功，返回token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 用户名或密码错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 用户登录
+      tags:
+      - 用户
+  /messages/conversation/{conversation_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据会话ID获取消息历史记录
+      parameters:
+      - description: 会话ID
+        in: path
+        name: conversation_id
+        required: true
+        type: string
+      - description: 上次消息序号
+        in: query
+        name: last_seq
+        type: integer
+      - default: 50
+        description: 返回数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息列表
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取会话消息历史
+      tags:
+      - 消息
+  /messages/group/{group_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据群组ID获取群聊消息历史记录
+      parameters:
+      - description: 群组ID
+        in: path
+        name: group_id
+        required: true
+        type: string
+      - description: 上次消息序号
+        in: query
+        name: last_seq
+        type: integer
+      - default: 50
+        description: 返回数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息列表
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取群聊消息历史
+      tags:
+      - 消息
+  /messages/private/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据对方用户ID获取私聊消息历史记录
+      parameters:
+      - description: 对方用户ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: 上次消息序号
+        in: query
+        name: last_seq
+        type: integer
+      - default: 50
+        description: 返回数量
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 消息列表
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取私聊消息历史
+      tags:
+      - 消息
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: 创建新用户账号
+      parameters:
+      - description: 注册信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_d60-lab_im-system_internal_model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 注册成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误或用户名已存在
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: 服务器错误
+          schema:
+            additionalProperties: true
+            type: object
+      summary: 用户注册
+      tags:
+      - 用户
+  /user/groups:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前用户加入的所有群组
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 群组列表
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取我的群组列表
+      tags:
+      - 群组
+  /user/info:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前登录用户的详细信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户信息
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 用户不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 用户
+    put:
+      consumes:
+      - application/json
+      description: 更新当前用户的昵称、头像等信息
+      parameters:
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 更新用户信息
+      tags:
+      - 用户
+  /user/password:
+    put:
+      consumes:
+      - application/json
+      description: 修改当前用户的登录密码
+      parameters:
+      - description: 新旧密码
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 修改成功
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误或旧密码错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 修改密码
+      tags:
+      - 用户
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: 根据关键词搜索用户
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        required: true
+        type: string
+      - default: 20
+        description: 返回数量限制
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户列表
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: 参数错误
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 搜索用户
+      tags:
+      - 用户
+  /users/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据用户ID获取用户公开信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 用户信息
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: 未授权
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: 用户不存在
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 根据ID获取用户
+      tags:
+      - 用户
+swagger: "2.0"
