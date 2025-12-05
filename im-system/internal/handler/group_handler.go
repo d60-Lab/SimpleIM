@@ -47,6 +47,7 @@ func (h *GroupHandler) RegisterRoutes(r *gin.Engine) {
 
 	// 用户相关群组接口
 	r.GET("/api/user/groups", AuthMiddleware(), h.GetUserGroups)
+	r.GET("/api/groups/my", AuthMiddleware(), h.GetUserGroups) // 别名路由
 }
 
 // CreateGroup 创建群组
