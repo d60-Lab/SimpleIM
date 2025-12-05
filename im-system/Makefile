@@ -189,6 +189,11 @@ redis-cli: ## 连接 Redis 命令行
 	@echo "$(GREEN)连接 Redis...$(NC)"
 	docker exec -it $(PROJECT_NAME)-redis-1 redis-cli
 
+.PHONY: mongo-cli
+mongo-cli: ## 连接 MongoDB 命令行
+	@echo "$(GREEN)连接 MongoDB...$(NC)"
+	docker exec -it $(PROJECT_NAME)-mongodb-1 mongosh -u root -p password123 --authenticationDatabase admin im_db
+
 ##@ 多节点部署
 
 .PHONY: up-multi

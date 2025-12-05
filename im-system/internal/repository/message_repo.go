@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/d60-lab/im-system/internal/model"
 	"github.com/d60-lab/im-system/pkg/database"
 )
 
@@ -35,6 +36,61 @@ type MessageDocument struct {
 	CreatedAt      time.Time              `bson:"created_at"`
 	UpdatedAt      time.Time              `bson:"updated_at"`
 	ExpireAt       *time.Time             `bson:"expire_at,omitempty"` // TTL索引字段
+}
+
+// ToMessage 转换为传输层 Message
+func (d *MessageDocument) ToMessage() *model.Message {
+	return &model.Message{
+		MessageID:      d.MessageID,
+		Type:           model.MessageType(d.Type),
+		From:           d.From,
+		To:             d.To,
+		GroupID:        d.GroupID,
+		Content:        d.Content,
+		Timestamp:      d.CreatedAt.UnixMilli(),
+		ConversationID: d.ConversationID,
+		Seq:            d.Seq,
+		Revoked:        d.Revoked,
+		CreatedAt:      d.CreatedAt,
+	}
+}
+
+// NewMessageDocument 从传输层 Message 创建 MessageDocument
+func NewMessageDocument(msg *model.Message) *MessageDocument {
+	now := time.Now()
+	content := make(map[string]interface{})
+	if msg.Content != nil {
+		switch c := msg.Content.(type) {
+		case map[string]interface{}:
+			content = c
+		default:
+			content["data"] = c
+		}
+	}
+
+	return &MessageDocument{
+		MessageID:      msg.MessageID,
+		ConversationID: msg.ConversationID,
+		Type:           int(msg.Type),
+		From:           msg.From,
+		To:             msg.To,
+		GroupID:        msg.GroupID,
+		Content:        content,
+		Seq:            msg.Seq,
+		Status:         1, // 默认已发送
+		Revoked:        msg.Revoked,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+}
+
+// ToMessages 批量转换为传输层 Message
+func ToMessages(docs []*MessageDocument) []*model.Message {
+	messages := make([]*model.Message, len(docs))
+	for i, doc := range docs {
+		messages[i] = doc.ToMessage()
+	}
+	return messages
 }
 
 // MessageRepository 消息仓库接口

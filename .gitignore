@@ -30,3 +30,13 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Build artifacts
+*.out
+bin/

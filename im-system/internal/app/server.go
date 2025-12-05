@@ -57,11 +57,11 @@ func NewServer(config *Config) (*Server, error) {
 	log.Println("Connected to MySQL")
 
 	// 自动迁移表结构
+	// 注意: Message 存储在 MongoDB，不在 MySQL 中创建表
 	if err := database.AutoMigrate(db,
 		&model.User{},
 		&model.Group{},
 		&model.GroupMember{},
-		&model.Message{},
 		&model.OfflineMessage{},
 		&model.Conversation{},
 		&model.UserConversation{},
@@ -249,22 +249,70 @@ func (s *Server) registerRoutes(
 
 // setupStaticFiles 设置静态文件服务
 func (s *Server) setupStaticFiles() {
-	candidates := []string{
-		"web",
-		"/app/web",
-		filepath.Join(filepath.Dir(executablePath()), "web"),
-		filepath.Join(filepath.Dir(executablePath()), "..", "web"),
+	// Vue SPA 应用 (chat-app/dist)
+	spaCandidates := []string{
+		"web/chat-app/dist",
+		"/app/web/chat-app/dist",
+		filepath.Join(filepath.Dir(executablePath()), "web", "chat-app", "dist"),
+		filepath.Join(filepath.Dir(executablePath()), "..", "web", "chat-app", "dist"),
 	}
 
-	for _, candidate := range candidates {
-		if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-			log.Printf("Found web directory at: %s", candidate)
-			s.engine.Static("/web", candidate)
+	for _, candidate := range spaCandidates {
+		indexPath := filepath.Join(candidate, "index.html")
+		if _, err := os.Stat(indexPath); err == nil {
+			log.Printf("Found Vue SPA at: %s", candidate)
+			s.setupSPARoutes(candidate)
 			return
 		}
 	}
 
-	log.Println("Warning: web directory not found, static file serving disabled")
+	log.Println("Warning: Vue SPA directory not found, SPA serving disabled")
+}
+
+// setupSPARoutes 设置 Vue SPA 路由 (支持 HTML5 History Mode)
+func (s *Server) setupSPARoutes(distPath string) {
+	// 静态资源
+	s.engine.Static("/assets", filepath.Join(distPath, "assets"))
+
+	// index.html 用于所有非 API 路由
+	indexPath := filepath.Join(distPath, "index.html")
+
+	// 根路径
+	s.engine.GET("/", func(c *gin.Context) {
+		c.File(indexPath)
+	})
+
+	// SPA 路由 - 支持 /login, /chat 等前端路由
+	spaRoutes := []string{"/login", "/chat", "/register"}
+	for _, route := range spaRoutes {
+		s.engine.GET(route, func(c *gin.Context) {
+			c.File(indexPath)
+		})
+	}
+
+	// favicon
+	faviconPath := filepath.Join(distPath, "favicon.ico")
+	if _, err := os.Stat(faviconPath); err == nil {
+		s.engine.GET("/favicon.ico", func(c *gin.Context) {
+			c.File(faviconPath)
+		})
+	}
+
+	// NoRoute 处理 - 对于非 API 请求返回 index.html
+	s.engine.NoRoute(func(c *gin.Context) {
+		// 如果是 API 请求，返回 404
+		if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+			c.JSON(404, gin.H{"error": "Not found"})
+			return
+		}
+		// 如果是 WebSocket 请求，返回 404
+		if c.Request.URL.Path == "/ws" {
+			c.JSON(404, gin.H{"error": "WebSocket endpoint"})
+			return
+		}
+		// 其他请求返回 index.html (SPA 路由)
+		c.File(indexPath)
+	})
 }
 
 // executablePath 获取可执行文件路径

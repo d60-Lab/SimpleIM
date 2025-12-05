@@ -4,8 +4,6 @@ package model
 import (
 	"encoding/json"
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // MessageType 消息类型
@@ -127,50 +125,22 @@ const (
 	QoSExactlyOnce QoSLevel = 2 // 恰好一次（保证送达且不重复）
 )
 
-// Message 消息主体结构
+// Message 消息主体结构 (用于 WebSocket/API 传输)
+// 注意: MongoDB 存储使用 repository.MessageDocument
 type Message struct {
-	MessageID       string      `json:"message_id" gorm:"primaryKey;type:varchar(64)"`
-	Type            MessageType `json:"type" gorm:"type:tinyint;not null"`
-	From            string      `json:"from" gorm:"column:from_user_id;type:varchar(64);index"`
-	To              string      `json:"to" gorm:"column:to_id;type:varchar(64);index"`
-	Content         interface{} `json:"content" gorm:"-"`
-	ContentRaw      string      `json:"-" gorm:"column:content;type:text"`
-	Timestamp       int64       `json:"timestamp" gorm:"autoCreateTime:milli"`
-	ClientTimestamp int64       `json:"client_timestamp,omitempty" gorm:"-"`
-	QoS             QoSLevel    `json:"qos" gorm:"-"`
-	ConversationID  string      `json:"conversation_id" gorm:"type:varchar(128);index:idx_conversation_seq"`
-	Seq             int64       `json:"seq" gorm:"index:idx_conversation_seq"`
-	Revoked         bool        `json:"revoked" gorm:"default:false"`
-	CreatedAt       time.Time   `json:"created_at" gorm:"autoCreateTime"`
-}
-
-// TableName 指定消息表名
-func (Message) TableName() string {
-	return "messages"
-}
-
-// BeforeCreate 创建前序列化Content
-func (m *Message) BeforeCreate(tx *gorm.DB) error {
-	if m.Content != nil {
-		data, err := json.Marshal(m.Content)
-		if err != nil {
-			return err
-		}
-		m.ContentRaw = string(data)
-	}
-	return nil
-}
-
-// AfterFind 查询后反序列化Content
-func (m *Message) AfterFind(tx *gorm.DB) error {
-	if m.ContentRaw != "" {
-		var content interface{}
-		if err := json.Unmarshal([]byte(m.ContentRaw), &content); err != nil {
-			return err
-		}
-		m.Content = content
-	}
-	return nil
+	MessageID       string      `json:"message_id"`
+	Type            MessageType `json:"type"`
+	From            string      `json:"from"`
+	To              string      `json:"to"`
+	GroupID         string      `json:"group_id,omitempty"`
+	Content         interface{} `json:"content"`
+	Timestamp       int64       `json:"timestamp"`
+	ClientTimestamp int64       `json:"client_timestamp,omitempty"`
+	QoS             QoSLevel    `json:"qos,omitempty"`
+	ConversationID  string      `json:"conversation_id,omitempty"`
+	Seq             int64       `json:"seq,omitempty"`
+	Revoked         bool        `json:"revoked,omitempty"`
+	CreatedAt       time.Time   `json:"created_at,omitempty"`
 }
 
 // MarshalBinary 序列化为二进制（用于Redis）
@@ -322,25 +292,8 @@ type CustomContent struct {
 	Data       map[string]interface{} `json:"data"`        // 自定义数据
 }
 
-// MessageRecord 消息记录（用于持久化存储）
-type MessageRecord struct {
-	MessageID      string    `json:"message_id" gorm:"primaryKey;type:varchar(64)"`
-	ConversationID string    `json:"conversation_id" gorm:"type:varchar(128);index:idx_conv_seq"`
-	Type           int       `json:"type" gorm:"type:tinyint;not null"`
-	FromUserID     string    `json:"from_user_id" gorm:"type:varchar(64);index"`
-	ToUserID       string    `json:"to_user_id" gorm:"type:varchar(64);index"`
-	GroupID        string    `json:"group_id" gorm:"type:varchar(64);index"`
-	Content        string    `json:"content" gorm:"type:text"`
-	Seq            int64     `json:"seq" gorm:"index:idx_conv_seq"`
-	Status         int       `json:"status" gorm:"type:tinyint;default:1"` // 1-已发送 2-已送达 3-已读
-	Revoked        bool      `json:"revoked" gorm:"default:false"`
-	CreatedAt      time.Time `json:"created_at" gorm:"autoCreateTime"`
-}
-
-// TableName 指定消息记录表名
-func (MessageRecord) TableName() string {
-	return "messages"
-}
+// MessageRecord 已废弃，请使用 repository.MessageDocument
+// Deprecated: Use repository.MessageDocument for MongoDB storage
 
 // OfflineMessage 离线消息
 type OfflineMessage struct {

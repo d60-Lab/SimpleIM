@@ -1,8 +1,25 @@
 # IM Gateway 服务 Dockerfile
 # 多阶段构建
 
-# ==================== 构建阶段 ====================
-FROM golang:1.21-alpine AS builder
+# ==================== 前端构建阶段 ====================
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/web/chat-app
+
+# 复制前端依赖文件
+COPY web/chat-app/package*.json ./
+
+# 安装依赖
+RUN npm ci
+
+# 复制前端源码
+COPY web/chat-app/ ./
+
+# 构建前端
+RUN npm run build
+
+# ==================== 后端构建阶段 ====================
+FROM golang:1.21-alpine AS backend-builder
 
 # 设置工作目录
 WORKDIR /app
@@ -39,14 +56,11 @@ RUN apk add --no-cache ca-certificates tzdata curl
 # 设置时区
 ENV TZ=Asia/Shanghai
 
-# 从构建阶段复制二进制文件
-COPY --from=builder /app/bin/gateway /app/gateway
+# 从后端构建阶段复制二进制文件
+COPY --from=backend-builder /app/bin/gateway /app/gateway
 
-# 复制配置文件（可选，也可以通过环境变量配置）
-COPY --from=builder /app/config/config.yaml /app/config/config.yaml
-
-# 复制 web 静态文件目录
-COPY --from=builder /app/web /app/web
+# 从前端构建阶段复制构建产物
+COPY --from=frontend-builder /app/web/chat-app/dist /app/web/chat-app/dist
 
 # 创建非root用户
 RUN addgroup -g 1000 -S appgroup && \
