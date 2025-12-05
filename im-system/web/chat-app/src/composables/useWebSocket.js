@@ -25,6 +25,8 @@ export function useWebSocket() {
       console.log("WebSocket connected");
       connectionStatus.value = "connected";
       reconnectAttempts.value = 0;
+      // 立即发送一个心跳
+      sendHeartbeat();
       startHeartbeat();
     };
 
@@ -65,7 +67,9 @@ export function useWebSocket() {
 
     reconnectAttempts.value++;
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.value), 30000);
-    console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts.value})`);
+    console.log(
+      `Reconnecting in ${delay}ms (attempt ${reconnectAttempts.value})`,
+    );
 
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
@@ -82,18 +86,24 @@ export function useWebSocket() {
     }
   }
 
+  function sendHeartbeat() {
+    if (ws.value && ws.value.readyState === WebSocket.OPEN) {
+      ws.value.send(
+        JSON.stringify({
+          type: 99,
+          content: { timestamp: Date.now() },
+        }),
+      );
+      console.log("Heartbeat sent");
+    }
+  }
+
   function startHeartbeat() {
     stopHeartbeat();
+    // 每 25 秒发送一次心跳（小于后端 30 秒的 ping 间隔）
     heartbeatTimer = setInterval(() => {
-      if (ws.value && ws.value.readyState === WebSocket.OPEN) {
-        ws.value.send(
-          JSON.stringify({
-            type: 99,
-            content: { timestamp: Date.now() },
-          })
-        );
-      }
-    }, 30000);
+      sendHeartbeat();
+    }, 25000);
   }
 
   function stopHeartbeat() {
@@ -145,7 +155,12 @@ export function useWebSocket() {
     chatStore.addMessage(chatKey, messageData);
 
     // If not in current chat, increment unread count
-    if (!(chatStore.currentChat?.type === "user" && chatStore.currentChat.id === chatId)) {
+    if (
+      !(
+        chatStore.currentChat?.type === "user" &&
+        chatStore.currentChat.id === chatId
+      )
+    ) {
       if (!isFromMe) {
         chatStore.incrementUnreadCount("user", chatId);
       }
@@ -173,7 +188,12 @@ export function useWebSocket() {
     chatStore.addMessage(chatKey, messageData);
 
     // If not in current chat, increment unread count
-    if (!(chatStore.currentChat?.type === "group" && chatStore.currentChat.id === groupId)) {
+    if (
+      !(
+        chatStore.currentChat?.type === "group" &&
+        chatStore.currentChat.id === groupId
+      )
+    ) {
       if (!isFromMe) {
         chatStore.incrementUnreadCount("group", groupId);
       }
@@ -181,10 +201,18 @@ export function useWebSocket() {
   }
 
   function getContentType(msgType, content) {
-    if (msgType === 4 || (typeof content === "object" && content?.file_type === "image")) {
+    if (
+      msgType === 4 ||
+      (typeof content === "object" && content?.file_type === "image")
+    ) {
       return "image";
     }
-    if (msgType === 7 || (typeof content === "object" && content?.file_id && content?.file_type !== "image")) {
+    if (
+      msgType === 7 ||
+      (typeof content === "object" &&
+        content?.file_id &&
+        content?.file_type !== "image")
+    ) {
       return "file";
     }
     if (msgType === 5) return "voice";
