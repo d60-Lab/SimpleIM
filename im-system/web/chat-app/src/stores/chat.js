@@ -25,7 +25,7 @@ export const useChatStore = defineStore("chat", () => {
   const currentGroup = computed(() => {
     if (!currentChat.value || currentChat.value.type !== "group") return null;
     return groups.value.find(
-      (g) => (g.group_id || g.id) === currentChat.value.id
+      (g) => (g.group_id || g.id) === currentChat.value.id,
     );
   });
 
@@ -74,7 +74,7 @@ export const useChatStore = defineStore("chat", () => {
 
   function addGroup(group) {
     const existingIndex = groups.value.findIndex(
-      (g) => (g.group_id || g.id) === (group.group_id || group.id)
+      (g) => (g.group_id || g.id) === (group.group_id || group.id),
     );
     if (existingIndex >= 0) {
       groups.value[existingIndex] = group;
@@ -84,12 +84,13 @@ export const useChatStore = defineStore("chat", () => {
   }
 
   function removeGroup(groupId) {
-    groups.value = groups.value.filter(
-      (g) => (g.group_id || g.id) !== groupId
-    );
+    groups.value = groups.value.filter((g) => (g.group_id || g.id) !== groupId);
     delete messages.value[`group:${groupId}`];
     delete groupMembers.value[groupId];
-    if (currentChat.value?.type === "group" && currentChat.value.id === groupId) {
+    if (
+      currentChat.value?.type === "group" &&
+      currentChat.value.id === groupId
+    ) {
       currentChat.value = null;
     }
   }
@@ -153,8 +154,10 @@ export const useChatStore = defineStore("chat", () => {
         headers: authStore.getAuthHeaders(),
       });
       const data = await response.json();
-      if (response.ok && data.groups) {
-        setGroups(data.groups);
+      if (response.ok) {
+        // API 返回格式: { data: { groups: [...] }, message: "success" }
+        const groups = data.data?.groups || data.groups || [];
+        setGroups(groups);
       }
     } catch (error) {
       console.error("Failed to load groups:", error);
@@ -168,9 +171,10 @@ export const useChatStore = defineStore("chat", () => {
         headers: authStore.getAuthHeaders(),
       });
       const data = await response.json();
-      if (response.ok && data.messages) {
+      const messagesData = data.data?.messages || data.messages || [];
+      if (response.ok && messagesData.length > 0) {
         const chatKey = `user:${userId}`;
-        const historyMessages = data.messages.map((msg) => ({
+        const historyMessages = messagesData.map((msg) => ({
           id: msg.message_id,
           from: msg.from_user_id,
           content: parseMessageContent(msg.content),
@@ -192,9 +196,10 @@ export const useChatStore = defineStore("chat", () => {
         headers: authStore.getAuthHeaders(),
       });
       const data = await response.json();
-      if (response.ok && data.messages) {
+      const messagesData = data.data?.messages || data.messages || [];
+      if (response.ok && messagesData.length > 0) {
         const chatKey = `group:${groupId}`;
-        const historyMessages = data.messages.map((msg) => ({
+        const historyMessages = messagesData.map((msg) => ({
           id: msg.message_id,
           from: msg.from_user_id,
           content: parseMessageContent(msg.content),
@@ -216,8 +221,9 @@ export const useChatStore = defineStore("chat", () => {
         headers: authStore.getAuthHeaders(),
       });
       const data = await response.json();
-      if (response.ok && data.members) {
-        setGroupMembers(groupId, data.members);
+      if (response.ok) {
+        const members = data.data?.members || data.members || [];
+        setGroupMembers(groupId, members);
       }
     } catch (error) {
       console.error("Failed to load group members:", error);
@@ -292,7 +298,11 @@ export const useChatStore = defineStore("chat", () => {
   function getContentTypeFromMsg(msg) {
     const content = parseMessageContent(msg.content);
     if (msg.msg_type === 4 || content?.file_type === "image") return "image";
-    if (msg.msg_type === 7 || (content?.file_id && content?.file_type !== "image")) return "file";
+    if (
+      msg.msg_type === 7 ||
+      (content?.file_id && content?.file_type !== "image")
+    )
+      return "file";
     if (msg.msg_type === 5) return "voice";
     if (msg.msg_type === 6) return "video";
     return "text";
