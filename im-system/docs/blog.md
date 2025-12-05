@@ -234,7 +234,7 @@ make up
 make logs
 
 # 访问演示页面
-open http://localhost:8080/web/chat.html
+open http://localhost:8080
 ```
 
 ### 方式二：本地开发
@@ -361,7 +361,7 @@ im-system/
 │   ├── handler/              # HTTP接口
 │   └── model/                # 数据模型
 ├── pkg/auth/                 # JWT认证
-├── web/chat.html             # 演示页面
+├── web/chat-app/             # Vue3 前端应用
 ├── deploy/
 │   ├── docker-compose.yml
 │   └── Dockerfile

@@ -99,7 +99,7 @@ up: ## 启动所有服务
 	$(DOCKER_COMPOSE) up -d
 	@echo ""
 	@echo "$(GREEN)服务已启动!$(NC)"
-	@echo "  - Web Demo: http://localhost:8080/web/chat.html"
+	@echo "  - Web Demo: http://localhost:8080"
 	@echo "  - MinIO 控制台: http://localhost:9001"
 	@echo ""
 
@@ -222,4 +222,4 @@ dev: deps ## 开发模式：启动依赖 + 本地运行
 .PHONY: demo
 demo: up ## 演示模式：启动所有服务并打开浏览器
 	@sleep 2
-	@open http://localhost:8080/web/chat.html 2>/dev/null || xdg-open http://localhost:8080/web/chat.html 2>/dev/null || echo "请手动打开: http://localhost:8080/web/chat.html"
+	@open http://localhost:8080 2>/dev/null || xdg-open http://localhost:8080 2>/dev/null || echo "请手动打开: http://localhost:8080"

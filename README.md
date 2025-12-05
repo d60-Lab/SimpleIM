@@ -21,7 +21,7 @@ cd im-system
 make up
 
 # 访问演示页面
-open http://localhost:8080/web/chat.html
+open http://localhost:8080
 ```
 
 ## 📁 项目结构

@@ -46,7 +46,7 @@ make up
 make ps
 
 # 访问演示页面
-open http://localhost:8080/web/chat.html
+open http://localhost:8080
 ```
 
 ### 本地开发

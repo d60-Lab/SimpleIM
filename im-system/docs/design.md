@@ -665,8 +665,8 @@ im-system/
 ├── service/                 # 逻辑层(可选)
 │   ├── main.go
 │   └── user.go
-├── web/                     # 前端示例
-│   └── chat.html
+├── web/                     # 前端
+│   └── chat-app/            # Vue3 应用
 ├── scripts/
 │   ├── stress_test.py       # 压测脚本
 │   └── init.sql             # 数据库初始化
@@ -4702,9 +4702,9 @@ im-system/
 │       ├── gateway.yaml
 │       └── push.yaml
 ├── config/
-│   └── config.yaml           # 配置文件
-├── web/                      # 前端示例
-│   └── chat.html
+├── .env.example              # 环境变量示例
+├── web/                      # 前端
+│   └── chat-app/             # Vue3 应用
 ├── go.mod
 ├── go.sum
 └── README.md

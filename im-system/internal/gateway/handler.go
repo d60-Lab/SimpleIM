@@ -202,6 +202,8 @@ func (h *WebSocketHandler) readPump(conn *Connection) {
 			break
 		}
 
+		// 重置读取超时（每收到消息都重置，不仅仅是 Pong）
+		conn.Conn.SetReadDeadline(time.Now().Add(h.config.PongTimeout))
 		conn.UpdateLastActive()
 
 		// 解析消息
